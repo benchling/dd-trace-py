@@ -19,14 +19,15 @@ LOG_ERR_INTERVAL = 60
 
 class AgentWriter(object):
 
-    def __init__(self, hostname='localhost', port=8126, uds_path=None, filters=None, priority_sampler=None):
+    def __init__(self, hostname='localhost', port=8126, uds_path=None, https=False, filters=None,
+                 priority_sampler=None):
         self._pid = None
         self._traces = None
         self._worker = None
         self._filters = filters
         self._priority_sampler = priority_sampler
         priority_sampling = priority_sampler is not None
-        self.api = api.API(hostname, port, uds_path=uds_path, priority_sampling=priority_sampling)
+        self.api = api.API(hostname, port, uds_path=uds_path, https=https, priority_sampling=priority_sampling)
 
     def write(self, spans=None, services=None):
         # if the worker needs to be reset, do it.
@@ -153,8 +154,7 @@ class Q(Queue):
             return Queue.put(self, item, block=False)
         except Full:
             # If the queue is full, replace a random item. We need to make sure
-            # the queue is not emptied was emptied in the meantime, so we lock
-            # check qsize value.
+            # the queue was not emptied in the meantime, so we lock and check qsize.
             with self.mutex:
                 qsize = self._qsize()
                 if qsize != 0:
